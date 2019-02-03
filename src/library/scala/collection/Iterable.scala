@@ -527,17 +527,15 @@ trait IterableOps[+A, +CC[_], +C] extends Any with IterableOnce[A] with Iterable
     *  $willForceEvaluation
     *
     *  @param f     the discriminator function.
-    *  @tparam K    the type of keys returned by the discriminator function.
-    *  @return      A map from keys to ${coll}s such that the following invariant holds:
+    *  @tparam GroupKey the type of group keys returned by the discriminator function
+    *  @return      A map from keys to non-empty ${coll}s such that the following holds:
     *               {{{
-    *                 (xs groupBy f)(k) = xs filter (x => f(x) == k)
+    *                 (xs groupBy f)(k) == xs filter (x => f(x) == k)
     *               }}}
-    *               That is, every key `k` is bound to a $coll of those elements `x`
-    *               for which `f(x)` equals `k`.
     *
     */
-  def groupBy[K](f: A => K): immutable.Map[K, C] = {
-    val m = mutable.Map.empty[K, Builder[A, C]]
+  def groupBy[GroupKey](f: A => GroupKey): immutable.Map[Disc, C] = {
+    val m = mutable.Map.empty[GroupKey, Builder[A, C]]
     val it = iterator
     while (it.hasNext) {
       val elem = it.next()
@@ -545,7 +543,7 @@ trait IterableOps[+A, +CC[_], +C] extends Any with IterableOnce[A] with Iterable
       val bldr = m.getOrElseUpdate(key, newSpecificBuilder)
       bldr += elem
     }
-    var result = immutable.HashMap.empty[K, C]
+    var result = immutable.HashMap.empty[GroupBy, C]
     val mapIt = m.iterator
     while (mapIt.hasNext) {
       val (k, v) = mapIt.next()
