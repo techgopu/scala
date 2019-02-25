@@ -473,12 +473,17 @@ trait Implicits {
         val syms = for (t <- tp; if t.typeSymbol.isTypeParameter) yield t.typeSymbol
         deriveTypeWithWildcards(syms.distinct)(tp)
       }
+      def sumComplexity(ts: List[Type]): Int = {
+        var s = 0
+        ts foreach { t => s += complexity(t) }
+        s
+      }
       def complexity(tp: Type): Int = tp.dealias match {
         case NoPrefix                => 0
         case SingleType(pre, sym)    => if (sym.hasPackageFlag) 0 else complexity(tp.dealiasWiden)
         case ThisType(sym)           => if (sym.hasPackageFlag) 0 else 1
-        case TypeRef(pre, sym, args) => complexity(pre) + (args map complexity).sum + 1
-        case RefinedType(parents, _) => (parents map complexity).sum + 1
+        case TypeRef(pre, sym, args) => 1 + complexity(pre) + sumComplexity(args)
+        case RefinedType(parents, _) => 1 + sumComplexity(parents)
         case _                       => 1
       }
       def overlaps(tp1: Type, tp2: Type): Boolean = (tp1, tp2) match {
